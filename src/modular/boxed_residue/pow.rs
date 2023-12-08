@@ -5,7 +5,7 @@ use crate::{BoxedUint, Limb, PowBoundedExp, Word};
 use alloc::vec::Vec;
 use subtle::ConstantTimeEq;
 
-impl BoxedResidue {
+impl BoxedResidue<'_> {
     /// Raises to the `exponent` power.
     pub fn pow(&self, exponent: &BoxedUint) -> Self {
         let ret = self.pow_bounded_exp(exponent, exponent.bits_precision());
@@ -28,12 +28,12 @@ impl BoxedResidue {
                 &self.residue_params.r,
                 self.residue_params.mod_neg_inv,
             ),
-            residue_params: self.residue_params.clone(),
+            residue_params: self.residue_params,
         }
     }
 }
 
-impl PowBoundedExp<BoxedUint> for BoxedResidue {
+impl PowBoundedExp<BoxedUint> for BoxedResidue<'_> {
     fn pow_bounded_exp(&self, exponent: &BoxedUint, exponent_bits: u32) -> Self {
         self.pow_bounded_exp(exponent, exponent_bits)
     }

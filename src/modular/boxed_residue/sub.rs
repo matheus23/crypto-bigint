@@ -3,7 +3,7 @@
 use super::BoxedResidue;
 use core::ops::{Sub, SubAssign};
 
-impl BoxedResidue {
+impl<'a> BoxedResidue<'a> {
     /// Subtracts `rhs`.
     pub fn sub(&self, rhs: &Self) -> Self {
         debug_assert_eq!(self.residue_params, rhs.residue_params);
@@ -12,44 +12,44 @@ impl BoxedResidue {
             montgomery_form: self
                 .montgomery_form
                 .sub_mod(&rhs.montgomery_form, &self.residue_params.modulus),
-            residue_params: self.residue_params.clone(),
+            residue_params: self.residue_params,
         }
     }
 }
 
-impl Sub<&BoxedResidue> for &BoxedResidue {
-    type Output = BoxedResidue;
-    fn sub(self, rhs: &BoxedResidue) -> BoxedResidue {
+impl<'a> Sub<&BoxedResidue<'a>> for &BoxedResidue<'a> {
+    type Output = BoxedResidue<'a>;
+    fn sub(self, rhs: &BoxedResidue<'a>) -> BoxedResidue<'a> {
         debug_assert_eq!(self.residue_params, rhs.residue_params);
         self.sub(rhs)
     }
 }
 
-impl Sub<BoxedResidue> for &BoxedResidue {
-    type Output = BoxedResidue;
+impl<'a> Sub<BoxedResidue<'a>> for &BoxedResidue<'a> {
+    type Output = BoxedResidue<'a>;
     #[allow(clippy::op_ref)]
-    fn sub(self, rhs: BoxedResidue) -> BoxedResidue {
+    fn sub(self, rhs: BoxedResidue<'a>) -> BoxedResidue<'a> {
         self - &rhs
     }
 }
 
-impl Sub<&BoxedResidue> for BoxedResidue {
-    type Output = BoxedResidue;
+impl<'a> Sub<&BoxedResidue<'a>> for BoxedResidue<'a> {
+    type Output = BoxedResidue<'a>;
     #[allow(clippy::op_ref)]
-    fn sub(self, rhs: &BoxedResidue) -> BoxedResidue {
+    fn sub(self, rhs: &BoxedResidue<'a>) -> BoxedResidue<'a> {
         &self - rhs
     }
 }
 
-impl Sub<BoxedResidue> for BoxedResidue {
-    type Output = BoxedResidue;
-    fn sub(self, rhs: BoxedResidue) -> BoxedResidue {
+impl<'a> Sub<BoxedResidue<'a>> for BoxedResidue<'a> {
+    type Output = BoxedResidue<'a>;
+    fn sub(self, rhs: BoxedResidue<'a>) -> BoxedResidue<'a> {
         &self - &rhs
     }
 }
 
-impl SubAssign<&BoxedResidue> for BoxedResidue {
-    fn sub_assign(&mut self, rhs: &BoxedResidue) {
+impl<'a> SubAssign<&BoxedResidue<'a>> for BoxedResidue<'a> {
+    fn sub_assign(&mut self, rhs: &BoxedResidue<'a>) {
         debug_assert_eq!(self.residue_params, rhs.residue_params);
         self.montgomery_form = self
             .montgomery_form
@@ -57,8 +57,8 @@ impl SubAssign<&BoxedResidue> for BoxedResidue {
     }
 }
 
-impl SubAssign<BoxedResidue> for BoxedResidue {
-    fn sub_assign(&mut self, rhs: BoxedResidue) {
+impl<'a> SubAssign<BoxedResidue<'a>> for BoxedResidue<'a> {
+    fn sub_assign(&mut self, rhs: BoxedResidue<'a>) {
         *self -= &rhs;
     }
 }
@@ -87,14 +87,14 @@ mod tests {
             256,
         )
         .unwrap();
-        let mut x_mod = BoxedResidue::new(x, params.clone());
+        let mut x_mod = BoxedResidue::new(x, &params);
 
         let y = BoxedUint::from_be_slice(
             &hex!("d5777c45019673125ad240f83094d4252d829516fac8601ed01979ec1ec1a251"),
             256,
         )
         .unwrap();
-        let y_mod = BoxedResidue::new(y, params);
+        let y_mod = BoxedResidue::new(y, &params);
 
         x_mod -= &y_mod;
 
