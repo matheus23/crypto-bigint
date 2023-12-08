@@ -4,7 +4,7 @@ use super::BoxedResidue;
 use crate::{modular::reduction::montgomery_reduction_boxed_mut, traits::Invert};
 use subtle::CtOption;
 
-impl BoxedResidue {
+impl BoxedResidue<'_> {
     /// Computes the residue `self^-1` representing the multiplicative inverse of `self`.
     /// I.e. `self * self^-1 = 1`.
     pub fn invert(&self) -> CtOption<Self> {
@@ -23,14 +23,14 @@ impl BoxedResidue {
 
         let value = Self {
             montgomery_form: inverse,
-            residue_params: self.residue_params.clone(),
+            residue_params: self.residue_params,
         };
 
         CtOption::new(value, is_some)
     }
 }
 
-impl Invert for BoxedResidue {
+impl Invert for BoxedResidue<'_> {
     type Output = CtOption<Self>;
     fn invert(&self) -> Self::Output {
         self.invert()

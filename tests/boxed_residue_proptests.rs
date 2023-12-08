@@ -14,11 +14,11 @@ fn to_biguint(uint: &BoxedUint) -> BigUint {
     BigUint::from_bytes_be(&uint.to_be_bytes())
 }
 
-fn retrieve_biguint(residue: &BoxedResidue) -> BigUint {
+fn retrieve_biguint(residue: &BoxedResidue<'_>) -> BigUint {
     to_biguint(&residue.retrieve())
 }
 
-fn reduce(n: &BoxedUint, p: BoxedResidueParams) -> BoxedResidue {
+fn reduce<'a>(n: &BoxedUint, p: &'a BoxedResidueParams) -> BoxedResidue<'a> {
     let bits_precision = p.modulus().bits_precision();
     let modulus = NonZero::new(p.modulus().clone()).unwrap();
 
@@ -29,7 +29,7 @@ fn reduce(n: &BoxedUint, p: BoxedResidueParams) -> BoxedResidue {
     };
 
     let n_reduced = n.rem_vartime(&modulus).widen(p.bits_precision());
-    BoxedResidue::new(n_reduced, p)
+    BoxedResidue::new(n_reduced, &p)
 }
 
 prop_compose! {
@@ -51,12 +51,6 @@ prop_compose! {
         BoxedResidueParams::new(n).expect("modulus should be valid")
     }
 }
-prop_compose! {
-    /// Generate two residues with a common modulus.
-    fn residue_pair()(a in uint(), b in uint(), n in modulus()) -> (BoxedResidue, BoxedResidue) {
-        (reduce(&a, n.clone()), reduce(&b, n.clone()))
-    }
-}
 
 proptest! {
     #[test]
@@ -72,7 +66,7 @@ proptest! {
 
     #[test]
     fn inv(x in uint(), n in modulus()) {
-        let x = reduce(&x, n.clone());
+        let x = reduce(&x, &n);
         let actual = Option::<BoxedResidue>::from(x.invert()).map(|a| a.retrieve());
 
         let x_bi = retrieve_biguint(&x);
@@ -87,7 +81,9 @@ proptest! {
     }
 
     #[test]
-    fn mul((a, b) in residue_pair()) {
+    fn mul(a in uint(), b in uint(), n in modulus()) {
+        let a = reduce(&a, &n);
+        let b = reduce(&b, &n);
         let p = a.params().modulus();
         let actual = &a * &b;
 
@@ -101,7 +97,7 @@ proptest! {
 
     #[test]
     fn pow(a in uint(), b in uint(), n in modulus()) {
-        let a = reduce(&a, n.clone());
+        let a = reduce(&a, &n);
         let actual = a.pow(&b);
 
         let a_bi = retrieve_biguint(&a);

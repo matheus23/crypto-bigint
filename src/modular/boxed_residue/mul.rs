@@ -15,7 +15,7 @@ use core::{
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
-impl BoxedResidue {
+impl<'a> BoxedResidue<'a> {
     /// Multiplies by `rhs`.
     pub fn mul(&self, rhs: &Self) -> Self {
         debug_assert_eq!(&self.residue_params, &rhs.residue_params);
@@ -25,7 +25,7 @@ impl BoxedResidue {
 
         Self {
             montgomery_form,
-            residue_params: self.residue_params.clone(),
+            residue_params: self.residue_params,
         }
     }
 
@@ -36,56 +36,56 @@ impl BoxedResidue {
 
         Self {
             montgomery_form,
-            residue_params: self.residue_params.clone(),
+            residue_params: self.residue_params,
         }
     }
 }
 
-impl Mul<&BoxedResidue> for &BoxedResidue {
-    type Output = BoxedResidue;
-    fn mul(self, rhs: &BoxedResidue) -> BoxedResidue {
+impl<'a> Mul<&BoxedResidue<'a>> for &BoxedResidue<'a> {
+    type Output = BoxedResidue<'a>;
+    fn mul(self, rhs: &BoxedResidue<'a>) -> BoxedResidue<'a> {
         self.mul(rhs)
     }
 }
 
-impl Mul<BoxedResidue> for &BoxedResidue {
-    type Output = BoxedResidue;
+impl<'a> Mul<BoxedResidue<'a>> for &BoxedResidue<'a> {
+    type Output = BoxedResidue<'a>;
     #[allow(clippy::op_ref)]
-    fn mul(self, rhs: BoxedResidue) -> BoxedResidue {
+    fn mul(self, rhs: BoxedResidue<'a>) -> BoxedResidue<'a> {
         self * &rhs
     }
 }
 
-impl Mul<&BoxedResidue> for BoxedResidue {
-    type Output = BoxedResidue;
+impl<'a> Mul<&BoxedResidue<'a>> for BoxedResidue<'a> {
+    type Output = BoxedResidue<'a>;
     #[allow(clippy::op_ref)]
-    fn mul(self, rhs: &BoxedResidue) -> BoxedResidue {
+    fn mul(self, rhs: &BoxedResidue<'a>) -> BoxedResidue<'a> {
         &self * rhs
     }
 }
 
-impl Mul<BoxedResidue> for BoxedResidue {
-    type Output = BoxedResidue;
-    fn mul(self, rhs: BoxedResidue) -> BoxedResidue {
+impl<'a> Mul<BoxedResidue<'a>> for BoxedResidue<'a> {
+    type Output = BoxedResidue<'a>;
+    fn mul(self, rhs: BoxedResidue<'a>) -> BoxedResidue<'a> {
         &self * &rhs
     }
 }
 
-impl MulAssign<&BoxedResidue> for BoxedResidue {
-    fn mul_assign(&mut self, rhs: &BoxedResidue) {
+impl<'a> MulAssign<&BoxedResidue<'a>> for BoxedResidue<'a> {
+    fn mul_assign(&mut self, rhs: &BoxedResidue<'a>) {
         debug_assert_eq!(&self.residue_params, &rhs.residue_params);
         MontgomeryMultiplier::from(self.residue_params.borrow())
             .mul_assign(&mut self.montgomery_form, &rhs.montgomery_form);
     }
 }
 
-impl MulAssign<BoxedResidue> for BoxedResidue {
-    fn mul_assign(&mut self, rhs: BoxedResidue) {
+impl<'a> MulAssign<BoxedResidue<'a>> for BoxedResidue<'a> {
+    fn mul_assign(&mut self, rhs: BoxedResidue<'a>) {
         Self::mul_assign(self, &rhs)
     }
 }
 
-impl Square for BoxedResidue {
+impl<'a> Square for BoxedResidue<'a> {
     fn square(&self) -> Self {
         BoxedResidue::square(self)
     }

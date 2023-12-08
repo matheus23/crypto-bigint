@@ -15,9 +15,6 @@ use super::{
 use crate::{BoxedUint, Limb, NonZero, Word};
 use subtle::CtOption;
 
-#[cfg(feature = "std")]
-use std::sync::Arc;
-
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -135,23 +132,17 @@ impl BoxedResidueParams {
 
 /// A residue represented using heap-allocated limbs.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BoxedResidue {
+pub struct BoxedResidue<'a> {
     /// Value in the Montgomery domain.
     montgomery_form: BoxedUint,
 
     /// Residue parameters.
-    #[cfg(not(feature = "std"))]
-    residue_params: BoxedResidueParams,
-
-    /// Residue parameters.
-    // Uses `Arc` when `std` is available.
-    #[cfg(feature = "std")]
-    residue_params: Arc<BoxedResidueParams>,
+    residue_params: &'a BoxedResidueParams,
 }
 
-impl BoxedResidue {
+impl<'a> BoxedResidue<'a> {
     /// Instantiates a new [`BoxedResidue`] that represents an integer modulo the provided params.
-    pub fn new(mut integer: BoxedUint, residue_params: BoxedResidueParams) -> Self {
+    pub fn new(mut integer: BoxedUint, residue_params: &'a BoxedResidueParams) -> Self {
         debug_assert_eq!(integer.bits_precision(), residue_params.bits_precision());
 
         let mut product = integer.mul(&residue_params.r2);
@@ -193,18 +184,18 @@ impl BoxedResidue {
     }
 
     /// Instantiates a new `Residue` that represents zero.
-    pub fn zero(residue_params: BoxedResidueParams) -> Self {
+    pub fn zero(residue_params: &'a BoxedResidueParams) -> Self {
         Self {
             montgomery_form: BoxedUint::zero_with_precision(residue_params.bits_precision()),
-            residue_params: residue_params.into(),
+            residue_params,
         }
     }
 
     /// Instantiates a new `Residue` that represents 1.
-    pub fn one(residue_params: BoxedResidueParams) -> Self {
+    pub fn one(residue_params: &'a BoxedResidueParams) -> Self {
         Self {
             montgomery_form: residue_params.r.clone(),
-            residue_params: residue_params.into(),
+            residue_params,
         }
     }
 
@@ -219,11 +210,11 @@ impl BoxedResidue {
     }
 
     /// Create a `DynResidue` from a value in Montgomery form.
-    pub fn from_montgomery(integer: BoxedUint, residue_params: BoxedResidueParams) -> Self {
+    pub fn from_montgomery(integer: BoxedUint, residue_params: &'a BoxedResidueParams) -> Self {
         debug_assert_eq!(integer.bits_precision(), residue_params.bits_precision());
         Self {
             montgomery_form: integer,
-            residue_params: residue_params.into(),
+            residue_params,
         }
     }
 
@@ -233,7 +224,7 @@ impl BoxedResidue {
     }
 }
 
-impl Retrieve for BoxedResidue {
+impl<'a> Retrieve for BoxedResidue<'a> {
     type Output = BoxedUint;
     fn retrieve(&self) -> BoxedUint {
         self.retrieve()
